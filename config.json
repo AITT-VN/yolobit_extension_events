@@ -2,7 +2,7 @@
     "name": "EVENT",
     "description": "Mục mở rộng hỗ trợ giao tiếp các event",
     "libs": [
-    
+    "event_manager.py"
     ],
     "blocks": [
         "definition.js"
