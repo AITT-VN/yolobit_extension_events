@@ -1,109 +1,235 @@
-Blockly.Blocks["yolobit_after_second_do"] = {
-    init: function () {
-      this.jsonInit({
-        colour: "#ECCB00",
-        tooltip: "",
-        message0: "sau mỗi %1 %2 giây thực hiện %3 %4",
-        args0: [
-          { type: "input_dummy" },
-          {
-            type: "input_value",
-            name: "SECOND",
-            check: "Number"
-          },
-          { type: "input_dummy" },
-          {
-            type: "input_statement", 
-            name: "ACTION"
-          }
-        ],
-     
-        helpUrl: "",
-      });
-    },
-  };
-  
-  Blockly.Python["yolobit_after_second_do"] = function (block) {
-    var second = Blockly.Python.valueToCode(block, 'SECOND', Blockly.Python.ORDER_ATOMIC);
-    var cbFunctionName = Blockly.Python.provideFunction_(
-        '',
-        ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '(' + variable_message + '):',
-          statements_action || Blockly.Python.PASS
-        ]);
+Blockly.Blocks["yolobit_events_timer"] = {
+  init: function () {
+    this.jsonInit({
+      colour: "#eec543",
+      tooltip: "Thực hiện các hành động được khai báo sau mỗi thời gian cố định",
+      message0: "sau mỗi %1 %2 giây thực hiện %3 %4",
+      args0: [
+        { type: "input_dummy" },
+        {
+          type: "input_value",
+          name: "INTERVAL",
+          check: "Number"
+        },
+        { type: "input_dummy" },
+        {
+          type: "input_statement", 
+          name: "ACTION"
+        }
+      ],
     
-      // TODO: Assemble Python into code variable.
-    var code = "";
-    return code;
-  };
+      helpUrl: "",
+    });
+  },
+};
   
-  Blockly.Blocks["yolobit_wait_for"] = {
-    init: function() {
-      this.jsonInit({
-        message0: " khi %1 thực hiện %2 %3",
-        args0: [
-          { name: "VALUE",
-            type: "input_dummy" },
-          { type: "input_dummy" },
-          {
-            type: "input_statement", 
-            name: "ACTION"
-          }          
-        ],
-        
-        colour: "#ECCB00"
-      });
-    }
-  };
-  
-  Blockly.Python["yolobit_wait_for"] = function(block) {
-    // TODO: Assemble Python into code variable.
-    var statements_action = Blockly.Python.statementToCode(block, 'ACTION');
-    var cbFunctionName = Blockly.Python.provideFunction_(
-        '',
-        ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '(' + variable_message + '):',
-          statements_action || Blockly.Python.PASS
-        ]);
-    // TODO: Change ORDER_NONE to the correct strength.
-    return code;
-  };
-Blockly.Blocks["yolobit_get_messages"] = {
-    init: function() {
-      this.jsonInit({
-        message0: " khi nhận được %1 thực hiện %3 %4",
-        args0: [
-          {
-            type: "field_dropdown",
-            name: "DATA",
-            options: [
-              ["thông điệp 1", "THÔNG ĐIỆP 1"],
-              ["thông điệp 2", "THÔNG ĐIỆP 2"],
-              ["thông điệp 3", "THÔNG ĐIỆP 3"],
-              ["thông điệp 4", "THÔNG ĐIỆP 4"],
-              ["thông điệp 5", "THÔNG ĐIỆP 5"]              
-            ]
-          },
-          { type: "input_dummy" },
-          {
-            type: "input_statement", 
-            name: "ACTION"
-          }          
-        ],
-        colour: "#ECCB00"
-      });
-    }
-  };
-  
-  Blockly.Python["yolobit_get_messages"] = function(block) {
-    var dropdown_data = block.getFieldValue("DATA");
-    // TODO: Assemble Python into code variable.
-    var statements_action = Blockly.Python.statementToCode(block, 'ACTION');
-    var cbFunctionName = Blockly.Python.provideFunction_(
-        '',
-        ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '(' + variable_message + '):',
-          statements_action || Blockly.Python.PASS
-        ]);
+Blockly.Python["yolobit_events_timer"] = function (block) {
+  Blockly.Python.definitions_['import_event_manager'] = 'from event_manager import *';
+  Blockly.Python.definitions_['import_event_manager_reset'] = 'event_manager.reset()';
+
+  var block_id = block.id.split('').filter(char => /[a-zA-Z]/.test(char)).slice(0, 5);
+  var interval = Blockly.Python.valueToCode(block, 'INTERVAL', Blockly.Python.ORDER_ATOMIC);
+  var statements_action = Blockly.Python.statementToCode(block, 'ACTION');
+  // TODO: Assemble Python into code variable.
+  var globals = [];
+  var varName;
+  var workspace = block.workspace;
+  var variables = workspace.getAllVariables() || [];
+  for (var i = 0, variable; variable = variables[i]; i++) {
+    varName = variable.name;
+    globals.push(Blockly.Python.variableDB_.getName(varName,
+      Blockly.Names.NameType?Blockly.Names.NameType.VARIABLE:Blockly.Variables.NAME_TYPE));
+  }
+  globals = globals.length ? Blockly.Python.INDENT + 'global ' + globals.join(', ') : '';
+
+  var cbFunctionName = Blockly.Python.provideFunction_(
+    'on_event_timer_callback_'  + block_id,
+    ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '():',
+      globals,
+      statements_action || Blockly.Python.PASS
+    ]);
+
+  // TODO: Assemble Python into code variable.
+  var code = 'event_manager.add_timer_event(' + interval*1000 + ', ' + cbFunctionName + ')\n';
+  Blockly.Python.definitions_['on_event_timer_callback_' + block.id] = code;
+  return '';
+  //return code;
+};
+
+Blockly.Blocks["yolobit_events_condition"] = {
+  init: function () {
+    this.jsonInit({
+      colour: "#eec543",
+      tooltip: "Thực hiện các hành động được khai báo sau mỗi khi điều kiện được thỏa",
+      message0: "khi %1 thực hiện %2 %3",
+      args0: [
+        { type: "input_value", name: "CONDITION", check: "Boolean" },
+        { type: "input_dummy" },
+        {
+          type: "input_statement", 
+          name: "ACTION"
+        }          
+      ],
     
-    var code = "";    
-    // TODO: Change ORDER_NONE to the correct strength.
-    return code;
-  };
+      helpUrl: "",
+    });
+  },
+};
+  
+Blockly.Python["yolobit_events_condition"] = function (block) {
+  Blockly.Python.definitions_['import_event_manager'] = 'from event_manager import *';
+  Blockly.Python.definitions_['import_event_manager_reset'] = 'event_manager.reset()';
+
+  // TODO: Assemble Python into code variable.
+  var block_id = block.id.split('').filter(char => /[a-zA-Z]/.test(char)).slice(0, 5);
+  var globals = [];
+  var varName;
+  var workspace = block.workspace;
+  var variables = workspace.getAllVariables() || [];
+  for (var i = 0, variable; variable = variables[i]; i++) {
+    varName = variable.name;
+    globals.push(Blockly.Python.variableDB_.getName(varName,
+      Blockly.Names.NameType?Blockly.Names.NameType.VARIABLE:Blockly.Variables.NAME_TYPE));
+  }
+  globals = globals.length ? Blockly.Python.INDENT + 'global ' + globals.join(', ') : '';
+
+  var condition = Blockly.Python.valueToCode(block, 'CONDITION', Blockly.Python.ORDER_ATOMIC);
+  
+  if (condition == '') {
+    return '';
+  }
+
+  var statements_action = Blockly.Python.statementToCode(block, 'ACTION');
+  var cbFunctionName = Blockly.Python.provideFunction_(
+    'on_event_condition_callback_' + block_id,
+    ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '():',
+      globals,
+      statements_action || Blockly.Python.PASS
+    ]);
+  
+  // TODO: Assemble Python into code variable.
+  var code = 'event_manager.add_condition_event(lambda:' + condition + ', ' + cbFunctionName + ')\n';
+  Blockly.Python.definitions_['on_event_condition_callback_' + block.id] = code;
+  return '';
+};
+
+
+Blockly.Blocks["yolobit_events_message"] = {
+  init: function () {
+    this.jsonInit({
+      colour: "#eec543",
+      tooltip: "Thực hiện các hành động được khai báo mỗi khi thông điệp được phát ra",
+      message0: "khi nhận được %1 thực hiện %2 %3",
+      args0: [
+        {
+          type: "field_dropdown",
+          name: "MESSAGE",
+          options: [
+            ["thông điệp 1", "0"],
+            ["thông điệp 2", "1"],
+            ["thông điệp 3", "2"],
+            ["thông điệp 4", "3"],
+            ["thông điệp 5", "4"],
+          ],
+        },
+        { type: "input_dummy" },
+        {
+          type: "input_statement", 
+          name: "ACTION"
+        }          
+      ],
+    
+      helpUrl: "",
+    });
+  },
+};
+  
+Blockly.Python["yolobit_events_message"] = function (block) {
+  Blockly.Python.definitions_['import_event_manager'] = 'from event_manager import *';
+  Blockly.Python.definitions_['import_event_manager_reset'] = 'event_manager.reset()';
+
+  // TODO: Assemble Python into code variable.
+  var block_id = block.id.split('').filter(char => /[a-zA-Z]/.test(char)).slice(0, 5);
+  var globals = [];
+  var varName;
+  var workspace = block.workspace;
+  var variables = workspace.getAllVariables() || [];
+  for (var i = 0, variable; variable = variables[i]; i++) {
+    varName = variable.name;
+    globals.push(Blockly.Python.variableDB_.getName(varName,
+      Blockly.Names.NameType?Blockly.Names.NameType.VARIABLE:Blockly.Variables.NAME_TYPE));
+  }
+  globals = globals.length ? Blockly.Python.INDENT + 'global ' + globals.join(', ') : '';
+
+  var message_index = block.getFieldValue('MESSAGE');
+  var statements_action = Blockly.Python.statementToCode(block, 'ACTION');
+  var cbFunctionName = Blockly.Python.provideFunction_(
+    'on_event_message_callback_' + block_id,
+    ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '():',
+      globals,
+      statements_action || Blockly.Python.PASS
+    ]);
+  
+  // TODO: Assemble Python into code variable.
+  var code = 'event_manager.add_message_event(' + message_index + ', ' + cbFunctionName + ')\n';
+  Blockly.Python.definitions_['on_event_message_callback_' + block.id] = code;
+  return '';
+};
+
+Blockly.Blocks["yolobit_events_broadcast_message"] = {
+  init: function () {
+    this.jsonInit({
+      colour: "#eec543",
+      tooltip: "Phát ra thông điệp để kích hoạt các sự kiện đã đăng ký nhận",
+      message0: "gửi ra %1",
+      args0: [
+        {
+          type: "field_dropdown",
+          name: "MESSAGE",
+          options: [
+            ["thông điệp 1", "0"],
+            ["thông điệp 2", "1"],
+            ["thông điệp 3", "2"],
+            ["thông điệp 4", "3"],
+            ["thông điệp 5", "4"],
+          ],
+        },
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      helpUrl: "",
+    });
+  },
+};
+  
+Blockly.Python["yolobit_events_broadcast_message"] = function (block) {
+  Blockly.Python.definitions_['import_event_manager'] = 'from event_manager import *';
+  Blockly.Python.definitions_['import_event_manager_reset'] = 'event_manager.reset()';
+
+  // TODO: Assemble Python into code variable.
+  var message_index = block.getFieldValue('MESSAGE');
+  // TODO: Assemble Python into code variable.
+  var code = 'event_manager.broadcast_message(' + message_index + ')\n';
+  return code;
+};
+
+Blockly.Blocks["yolobit_events_run"] = {
+  init: function () {
+    this.jsonInit({
+      colour: "#eec543",
+      tooltip: "Xử lý các sự kiện đã khai báo",
+      message0: "xử lý sự kiện",
+      previousStatement: null,
+      nextStatement: null,
+      helpUrl: "",
+    });
+  },
+};
+
+Blockly.Python['yolobit_events_run'] = function(block) {
+  Blockly.Python.definitions_['import_event_manager'] = 'from event_manager import *';
+  Blockly.Python.definitions_['import_event_manager_reset'] = 'event_manager.reset()';
+  // TODO: Assemble Python into code variable.
+  var code = 'event_manager.run()\n';
+  return code;
+};

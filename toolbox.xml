@@ -1,13 +1,15 @@
 <xml xmlns="https://developers.google.com/blockly/xml" id="toolbox" style="display: none">
-  <category name="EVENT" colour="#ECCB00" icon="event">
-    <block type="yolobit_after_second_do">
-      <value name="SECOND">
+  <category name="SỰ KIỆN" colour="#ECCB00" icon="calendar-alt">
+    <block type="yolobit_events_timer">
+      <value name="INTERVAL">
         <shadow type="math_number">
           <field name="NUM">0</field>
         </shadow>
       </value>      
     </block>
-    <block type="yolobit_wait_for"/>
-    <block type="yolobit_get_messages"/>
+    <block type="yolobit_events_condition"/>
+    <block type="yolobit_events_message"/>
+    <block type="yolobit_events_broadcast_message"/>
+    <block type="yolobit_events_run"/>
   </category>
 </xml>

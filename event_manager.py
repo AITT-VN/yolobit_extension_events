@@ -1,6 +1,5 @@
 import time
 import _thread
-from yolobit import *
 
 _EVENT_TIMER = const(0)
 _EVENT_MESSAGE = const(1)
@@ -8,33 +7,35 @@ _EVENT_CONDITION = const(2)
 
 class EventManager:
     def __init__(self):
-        self.events = []
+        self._events = []
         self._ticks = time.ticks_ms()
 
-    def add_event(self, event):
-        # event: {type: type, last_ticks:0, condition: None, message_index: 0, callback: None}
-        if event.get('type') == _EVENT_TIMER:
-          if event.get('interval') == None or event.get('interval') <= 0:
-            return
-          else:
-            event['last_ticks'] = 0
-        elif event.get('type') == _EVENT_MESSAGE:
-          if event.get('message_index') == None or event.get('message_index') < 0:
-            return
-        elif event.get('type') == _EVENT_CONDITION:
-          if event.get('condition') == None:
+    def add_timer_event(self, interval, callback):
+        if interval == None or interval <= 0 or callback == None:
             return
 
-        self.events.append(event)
+        self._events.append({"type": _EVENT_TIMER, "last_ticks": 0, "interval": interval, "callback": callback})
+    
+    def add_condition_event(self, condition, callback):
+        if condition == None or callback == None:
+            return
+
+        self._events.append({"type": _EVENT_CONDITION, "condition": condition, "callback": callback})
+    
+    def add_message_event(self, message_index, callback):
+        if message_index == None or message_index < 0 or callback == None:
+            return
+
+        self._events.append({"type": _EVENT_MESSAGE, "message_index": message_index, "callback": callback})
 
     def run(self):
         self._ticks = time.ticks_ms()
-        for event in self.events:
+        for event in self._events:
             if self._check_event(event):
                 self._run_event(event)
     
     def broadcast_message(self, message_index):
-      for event in self.events:
+      for event in self._events:
           if event.get('type') == _EVENT_MESSAGE and event.get('message_index') == message_index:
               self._run_event(event)
     
@@ -51,8 +52,11 @@ class EventManager:
           return False
 
     def _run_event(self, event):
-      if event.get('callback') != None:
-        _thread.start_new_thread(event.get('callback'), ())
+        if event.get('callback') != None:
+            _thread.start_new_thread(event.get('callback'), ())
+    
+    def reset(self):
+        self._events = []
 
 event_manager = EventManager()
 
@@ -110,13 +114,13 @@ def unit_test():
         display.set_all('#000000')
         time.sleep_ms(1000)
     
-    event_manager.add_event({"type":_EVENT_TIMER, "interval": 1000, "callback":callback_timer1})
-    event_manager.add_event({"type":_EVENT_TIMER, "interval": 2000, "callback":callback_timer2})
-    event_manager.add_event({"type":_EVENT_TIMER, "interval": 0, "callback":callback_timer2})
-    event_manager.add_event({"type":_EVENT_MESSAGE, "message_index": 0, "callback":callback_message1})
-    event_manager.add_event({"type":_EVENT_MESSAGE, "message_index": 1, "callback":callback_message2})
-    event_manager.add_event({"type":_EVENT_CONDITION, "condition": lambda:test, "callback":callback_condition1})
-    event_manager.add_event({"type":_EVENT_CONDITION, "condition": lambda:accelerometer.is_gesture("tilt_left"), "callback":callback_condition2})
+    event_manager.add_timer_event(1000, callback_timer1)
+    event_manager.add_timer_event(2000, callback_timer2)
+    event_manager.add_timer_event(0, None) # invalid input
+    event_manager.add_message_event(0, callback_message1)
+    event_manager.add_message_event(1, callback_message2)
+    event_manager.add_condition_event(lambda:test, callback_condition1)
+    event_manager.add_condition_event(lambda:accelerometer.is_gesture("tilt_left"), callback_condition2)
 
     test = False
 

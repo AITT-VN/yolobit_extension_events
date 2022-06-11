@@ -1,8 +1,8 @@
 {
-    "name": "EVENT",
-    "description": "Mục mở rộng hỗ trợ giao tiếp các event",
+    "name": "SỰ KIỆN",
+    "description": "Mục mở rộng hỗ trợ sử dụng sự kiện trong chương trình",
     "libs": [
-    "event_manager.py"
+        "event_manager.py"
     ],
     "blocks": [
         "definition.js"
